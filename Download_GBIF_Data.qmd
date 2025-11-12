@@ -1,0 +1,62 @@
+---
+title: "Download_GBIF-Data"
+author: "Max"
+format: pdf
+editor: visual
+---
+
+# GBIF-Daten mit R herunterladen
+Geht das auch ohne Login?
+
+Erstmal mit Login:
+```{r, "Libraries und Setup"}
+#| eval: true
+#| echo: true
+#| warning: false
+
+#Libraries:
+library(rgbif)
+
+#Working directory:
+setwd("~/CAU-Zeug/UGM/B-Bereich/Umweltmodellierung/Projekt_Hobby/UW_Mod_R")
+
+```
+
+usageKey und andere Infos zu den gewünschten Daten abgreifen:
+```{r, "Infos zu Daten"}
+#| eval: true
+#| echo: true
+#| warning: false
+
+#Das soll die GBIF interne ID der Art beschaffen
+usageKey_Species <- rgbif::name_backbone(name = "Amanita phalloides")
+usageKey_Species$usageKey
+
+# Fragt die Datensätze nach den folgenden Kriterien ab
+data_info <- occ_search(taxonKey = usageKey_Species$usageKey, 
+                        year = '2020, 2025',
+                        hasCoordinate = TRUE,
+                        country = 'DE',
+                        hasGeospatialIssue = FALSE,
+                        basisOfRecord = 'HUMAN_OBSERVATION',
+                        )
+
+data_info$meta$count #Gibt die Menge der "verfügbaren" Datensätze nach den Kriterien wieder.
+```
+
+
+Download der Daten:
+```{r, "Download GBIF-Daten"}
+#| eval: true
+#| echo: true
+#| warning: false
+
+a
+
+```
+
+
+
+
+
+
