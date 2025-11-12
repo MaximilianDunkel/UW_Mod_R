@@ -18,6 +18,7 @@ Erstmal mit Login:
 library(rgbif) # für download/datenbeschaffung
 library(dplyr) #für df und aufräumen
 library(sf) # für umwandlung in räumliche daten und export (geojson)
+library(leaflet) # für Visualisierung
 
 #Working directory:
 setwd("~/CAU-Zeug/UGM/B-Bereich/Umweltmodellierung/Projekt_Hobby/UW_Mod_R")
@@ -111,9 +112,48 @@ geo_df_data_reproj <- sf::st_transform(geo_df_data, crs = 25832) # weil Standart
 
 ## Speichern als GeoJSON:
 dir.create("Data_saved") #erzeugt das Directory für die geojson
-st_write(geo_df_data_reproj, "./Data_saved/Species_Data.geojson", driver = "GeoJSON")
+st_write(geo_df_data_reproj, "./Data_saved/Species_Data.geojson", driver = "GeoJSON", delete_dsn = TRUE)
 
 ```
+
+
+
+Um das ganze als Karte darzustellen einmal das ganze in Leaflet werfen:
+```{r, "Darstellung mit Leaflet"}
+#| eval: true
+#| echo: true
+#| warning: false
+
+#Karte erstellen
+karte_data <- leaflet(geo_df_data) |>
+    addTiles() |> # wenn leer, wird standartmäßig OSM verwendet
+    addCircleMarkers( # steuert die Marker
+      radius = 5,
+      color = "green",
+      fillColor = "white",
+      popup = ~paste("Quelle: ", institutionCode, "<br>",
+                                    "Jahr: ", year, "<br>",
+                                    "Ort: ", locality)) |> # Label
+    setView(lat = 51.16, lng = 10.45, zoom = 6) |> #quasi der "Start" wo die Karte geöffnet wird
+    addMiniMap(position = "bottomright", # fügt eine Übersichtskarte/Minimap hinzu
+               width = 150,
+               height = 150,
+               zoomLevelFixed = 4, # fixiert die Karte, damit man da nicht ausversehen rein und rauszoomt
+               aimingRectOptions = list(color = "transparent", weight = 0)) # entfernt so eine hässliche BoundingBox die da standartmäßig drin ist. KP, was das soll
+  
+karte_data # zeigt die Karte an
+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
