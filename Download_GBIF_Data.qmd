@@ -15,7 +15,9 @@ Erstmal mit Login:
 #| warning: false
 
 #Libraries:
-library(rgbif)
+library(rgbif) # für download/datenbeschaffung
+library(dplyr) #für df und aufräumen
+library(sf) # für umwandlung in räumliche daten und export (geojson)
 
 #Working directory:
 setwd("~/CAU-Zeug/UGM/B-Bereich/Umweltmodellierung/Projekt_Hobby/UW_Mod_R")
@@ -58,9 +60,60 @@ limit <- 500 # maximale Menge Daten, die in einem Rutsch abgegriffen werden kön
 total <- data_info$meta$count # Die Menge der abgefragten Daten
 pages <- ceiling(total/limit) # Die Anzahl der nötigen Zugriffe, bis alle Daten abgesammelt wurden
 
+data_gesammelt <- list()  # Noch leere Liste, die später mit den Seiten gefüllt wird
+
+for (seite in seq_len(pages)) {
+  start <- (seite -1)* limit
+  cat("Sammle Seite ", seite, "von", pages, "...\n")
+  
+  data_abfrage <- rgbif::occ_search(taxonKey = usageKey_Species$usageKey, 
+                        year = '2020, 2025',
+                        hasCoordinate = TRUE,
+                        country = 'DE',
+                        hasGeospatialIssue = FALSE,
+                        basisOfRecord = 'HUMAN_OBSERVATION',
+                        limit = limit,
+                        start = start
+                        )
+  
+  data_gesammelt[[seite]] <- data_abfrage$data #die einzelnen Seiten liegen jetzt als separate DFs in der Liste, muss jetzt noch zusammengefügt werden (also zu einem einzigen DF)
+  data_gesammelt[[seite]] <- dplyr::select(data_abfrage$data,
+  occurrenceID, scientificName, decimalLatitude, decimalLongitude, eventDate, year, institutionCode, locality)
+  
+}
+
+# Spalten können variieren - kp warum - deshalb mit dplyr::bind_rows das Ganze vereinheitlichen, dann sollte da auch nichts verloren gehen. Fehlende Spalten werden mit NA befüllt (laut Copilot), mal sehen, was dabei rauskommt.
+df_data <- dplyr::bind_rows(data_gesammelt)
+
+# Mit rbind ein ganzes DF erstellen
+
+df_data <- do.call(rbind, data_gesammelt)
+
+# Zahl der Zeilen des finalen DF = Anzahl der tatsächlich geladenen Datensätze (sollte = data_info$meta$count sein...)
+nrow(df_data)
 ```
 
 
+Jetzt wo die Daten heruntergeladen sind, müssen sie noch in eine GIS-handlebare Form übertragen werden -> GeoJSON 
+```{r, "Datentransformation & Export"}
+#| eval: true
+#| echo: true
+#| warning: false
+
+# mit dem sf-Paket wird das df zu einem geo-df, reprojeziert und dann als geojson exportiert
+
+geo_df_data <- sf::st_as_sf(df_data,
+                            coords = c("decimalLongitude", "decimalLatitude"),
+                            crs = 4326 # standart bei GBIF
+                            )
+
+geo_df_data_reproj <- sf::st_transform(geo_df_data, crs = 25832) # weil Standart für fast alles in DE
+
+## Speichern als GeoJSON:
+dir.create("Data_saved") #erzeugt das Directory für die geojson
+st_write(geo_df_data_reproj, "./Data_saved/Species_Data.geojson", driver = "GeoJSON")
+
+```
 
 
 
