@@ -51,7 +51,12 @@ Download der Daten:
 #| echo: true
 #| warning: false
 
-a
+# Laut Copilot heißt das "Paging", also die Datenbank, Seite für Seite durchgehen. 
+# Ich würde einen for-Loop nehmen. Geht aber bestimmt auch anders
+
+limit <- 500 # maximale Menge Daten, die in einem Rutsch abgegriffen werden können
+total <- data_info$meta$count # Die Menge der abgefragten Daten
+pages <- ceiling(total/limit) # Die Anzahl der nötigen Zugriffe, bis alle Daten abgesammelt wurden
 
 ```
 
